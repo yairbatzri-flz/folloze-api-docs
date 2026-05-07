@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Embed example — Folloze API docs</title>
+
+<!-- 1. Required Google Fonts (used by the embed) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- 2. The embed's stylesheet -->
+<link rel="stylesheet" href="folloze-api-docs.css">
+
+<style>
+  /* Host page styling — completely independent of the embedded docs */
+  body { font-family: system-ui, sans-serif; margin: 0; }
+  .host-header {
+    padding: 16px 32px;
+    background: #1a1c33;
+    color: #fff;
+  }
+  .host-header h1 { margin: 0; font-size: 18px; font-weight: 500; }
+  .host-header p  { margin: 4px 0 0; font-size: 13px; opacity: 0.7; }
+  .host-content { /* whatever your host page is — header, sidebar, etc. */ }
+</style>
+</head>
+<body>
+  <header class="host-header">
+    <h1>Your portal</h1>
+    <p>Folloze API documentation embedded below</p>
+  </header>
+
+  <main class="host-content">
+    <!-- 3. Embed location — paste folloze-api-docs.html contents here, OR fetch it dynamically as below -->
+    <div id="folloze-docs-target"></div>
+  </main>
+
+  <script>
+    // Fetch the markup snippet and inject. (You can also paste the HTML inline.)
+    fetch('folloze-api-docs.html')
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById('folloze-docs-target').innerHTML = html;
+        // Load the JS module *after* the markup is in the DOM
+        const s = document.createElement('script');
+        s.src = 'folloze-api-docs.js';
+        s.defer = true;
+        document.body.appendChild(s);
+      });
+  </script>
+</body>
+</html>

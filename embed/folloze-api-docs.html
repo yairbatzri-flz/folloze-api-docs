@@ -1,0 +1,933 @@
+<div class="flz-docs">
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img class="logo-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMnxz7B14tExoV7l1w8KcWVvbKnCelq2r__C3Se6vmHw&s&ec=121643214" alt="Folloze" />
+      <div class="product">Public APIs &middot; v0.1 <span class="beta">BETA</span></div>
+    </div>
+    <nav>
+      <h4>Folloze API</h4>
+      <a href="#intro">Introduction</a>
+      <a href="#which-api">Which API do I need?</a>
+      <a href="#prerequisites">Prerequisites</a>
+      <a href="#authentication">Authentication</a>
+      <a href="#required-headers">Required headers</a>
+      <a href="#base-url">Base URL</a>
+      <a href="#response-codes">Response codes</a>
+
+      <h4>Board Creation: concepts</h4>
+      <a href="#overview">Overview</a>
+      <a href="#concepts-sections">Sections, widgets, ribbons</a>
+      <a href="#concepts-schema">API schema descriptors</a>
+      <a href="#concepts-identity">Section &amp; widget identity</a>
+      <a href="#concepts-merge">Merge semantics</a>
+
+      <h4>Board Creation: endpoints</h4>
+      <a href="#get-templates"><span class="method get" style="background:#dbeafe;color:#1e40af">GET</span>List templates</a>
+      <a href="#get-describe"><span class="method get" style="background:#dbeafe;color:#1e40af">GET</span>Describe template</a>
+      <a href="#post-boards"><span class="method post" style="background:#dcfce7;color:#166534">POST</span>Create board</a>
+
+      <h4>Content API</h4>
+      <a href="#content-overview">Overview</a>
+      <a href="#content-auth">Auth &amp; base URL</a>
+      <a href="#content-list-items"><span class="method get" style="background:#dbeafe;color:#1e40af">GET</span>List / search items</a>
+      <a href="#content-create-item"><span class="method post" style="background:#dcfce7;color:#166534">POST</span>Create content item</a>
+      <a href="#content-create-board-item"><span class="method post" style="background:#dcfce7;color:#166534">POST</span>Attach item to board</a>
+      <a href="#content-update-board-item"><span class="method post">PUT</span>Update board item</a>
+      <a href="#content-categories">Categories &amp; subcategories</a>
+      <a href="#content-async">Async file ingest</a>
+
+      <h4>Guides</h4>
+      <a href="#walkthrough">End-to-end walkthrough</a>
+      <a href="#best-practices">Best practices</a>
+
+      <h4>New to Folloze?</h4>
+      <a href="#glossary">Folloze 101 &mdash; Key concepts</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+
+  <h1 id="intro">Folloze API</h1>
+  <p class="lede">The Folloze API lets you build personalized buyer experiences programmatically &mdash; generate boards<button class="term-help" data-term="board" aria-label="What is a board?" aria-expanded="false">?</button> from templates<button class="term-help" data-term="template-board" aria-label="What is a template board?" aria-expanded="false">?</button>, sync your content library, and attach the right content to the right account &mdash; all driven from your CRM, CMS, or AI pipeline.</p>
+
+  <p>The platform exposes <strong>two complementary REST APIs</strong>, both served from the same host (<code>https://content-api.folloze.com</code>). Most integrations use both:</p>
+
+  <table>
+    <thead><tr><th>API</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong><a href="#overview">Board Creation API</a></strong></td>
+        <td>Generates Folloze boards from template boards &mdash; the structure, sections<button class="term-help" data-term="section" aria-label="What is a section?" aria-expanded="false">?</button>, widgets, headers<button class="term-help" data-term="header" aria-label="What is a header?" aria-expanded="false">?</button>, and footers<button class="term-help" data-term="footer" aria-label="What is a footer?" aria-expanded="false">?</button> of the page itself.</td>
+      </tr>
+      <tr>
+        <td><strong><a href="#content-overview">Content API</a></strong></td>
+        <td>Creates content items<button class="term-help" data-term="content-item" aria-label="What is a content item?" aria-expanded="false">?</button> in Folloze from any source (URLs, files, videos, PDFs &mdash; the asset doesn't have to exist in Folloze first), and places items on boards with per-board overrides.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Both APIs share the same base URL, authentication, error model, and conventions described in the next few sections. A single API token issued to your organization unlocks both.</p>
+
+  <h4>Typical use cases</h4>
+  <ul>
+    <li><strong>Bulk-personalized boards</strong> &mdash; one board per target account, campaign, or event, populated from your CRM.</li>
+    <li><strong>AI / content pipelines</strong> &mdash; pipe LLM-generated copy and curated assets straight into Folloze.</li>
+    <li><strong>CMS sync</strong> &mdash; mirror an internal content library into the Folloze Content Center<button class="term-help" data-term="content-center" aria-label="What is the Content Center?" aria-expanded="false">?</button>.</li>
+    <li><strong>1:1 deal rooms</strong> &mdash; same source asset, different presentation per opportunity, with no duplicate items in your library.</li>
+  </ul>
+
+  <h2 id="which-api">Which API do I need? <a class="anchor-link" href="#which-api">#</a></h2>
+  <p>Pick by what you're trying to ship to a buyer:</p>
+  <ul>
+    <li><strong>I need a new branded page per account / campaign / event</strong> &rarr; <a href="#overview">Board Creation API</a>. You'll start from a template and fill in titles, subtitles, CTAs, and column content.</li>
+    <li><strong>I need to bring a new asset into Folloze</strong> (a file, a URL, a video &mdash; from anywhere, even if it's never been in Folloze before) &rarr; <a href="#content-create-item">Content API &mdash; <code>POST /v1/items</code></a>.</li>
+    <li><strong>I need to place an existing Folloze item onto a board</strong> &rarr; <a href="#content-create-board-item">Content API &mdash; <code>POST /v1/board_items</code></a>, optionally with per-board title / thumbnail overrides.</li>
+    <li><strong>I need to search or audit items already in Folloze</strong> &rarr; <a href="#content-list-items">Content API &mdash; <code>GET /v1/items</code></a>.</li>
+  </ul>
+
+  <h4>End-to-end example</h4>
+  <p>A typical "generate a personalized board for an account" flow uses both APIs:</p>
+  <ol>
+    <li><a href="#get-templates"><code>GET /v1/board_templates</code></a> &mdash; list templates in your organization.</li>
+    <li><a href="#get-describe"><code>GET /v1/board_templates/:id/describe</code></a> &mdash; read a template's full structure (sections, widgets, header, footer).</li>
+    <li><a href="#post-boards"><code>POST /v1/boards</code></a> &mdash; create a new board from a template.</li>
+    <li><a href="#content-create-item"><code>POST /v1/items</code></a> &mdash; create a content item.</li>
+    <li><a href="#content-list-items"><code>GET /v1/items</code></a> &mdash; list and search content items.</li>
+    <li><a href="#content-create-board-item"><code>POST /v1/board_items</code></a> &mdash; place a content item on a board.</li>
+  </ol>
+
+  <h2 id="overview">Board Creation API: overview <a class="anchor-link" href="#overview">#</a></h2>
+  <p>The Board Creation API turns a template board in your organization into the source-of-truth for many personalized boards. You read the template's structure, fill in your content, and post it back to create a new board.</p>
+
+  <h4>Core endpoints</h4>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /v1/board_templates</code></td><td>List all template boards in your organization &mdash; useful for discovering template ids, names, and descriptions.</td></tr>
+      <tr><td><code>GET /v1/board_templates/:id/describe</code></td><td>Read a full template structure, including header and footer, in the same shape used for creation.</td></tr>
+      <tr><td><code>POST /v1/boards</code></td><td>Create a new board from a template, with section content (and optionally header/footer).</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="prerequisites">Prerequisites <a class="anchor-link" href="#prerequisites">#</a></h2>
+  <ol>
+    <li><strong>Feature enabled.</strong> The <code>board_creation_api</code> feature must be enabled for your organization. Contact your Folloze account manager if it is not.</li>
+    <li><strong>API token.</strong> An API token issued by Folloze (a &ldquo;Content Integration Client&rdquo; token). <strong>To get a token, contact your Folloze account representative</strong> &mdash; tokens are provisioned per organization and cannot be self-served.</li>
+    <li><strong>A template board.</strong> A board that is defined as a template in your Folloze instance.</li>
+  </ol>
+
+  <h2 id="authentication">Authentication <a class="anchor-link" href="#authentication">#</a></h2>
+  <p>All requests are authenticated with your API token in the <code>Authorization</code> header, using the <code>Basic</code> scheme:</p>
+  <pre><code>Authorization: Basic &lt;your_api_token&gt;</code></pre>
+  <p>Requests without a valid token return <span class="status-pill status-4xx">401</span>. Requests where the API is not enabled in your Folloze organization return <span class="status-pill status-4xx">403</span>.</p>
+
+  <div class="callout tip">
+    <strong>Getting a token.</strong> API tokens are not self-served. <strong>Contact your Folloze account representative</strong> to have a token provisioned for your organization. The same token works for both the Board Creation API and the Content API.
+  </div>
+
+  <h2 id="required-headers">Required headers <a class="anchor-link" href="#required-headers">#</a></h2>
+  <p>These header rules apply to <strong>both</strong> the Board Creation API and the Content API.</p>
+
+  <h4>All POST / PUT requests</h4>
+  <p>Every write call must include these headers in addition to <code>Authorization</code>:</p>
+  <table>
+    <thead><tr><th>Header</th><th>Value</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><code>Content-Type</code></td><td><code>application/json</code></td><td>Required &mdash; bodies are parsed as JSON.</td></tr>
+      <tr><td><code>User-Agent</code></td><td><code>Folloze</code></td><td>Required &mdash; identifies the request as an official Folloze API client. Requests without it may be rejected.</td></tr>
+      <tr><td><code>Folloze-Initiator</code></td><td><code>Folloze</code></td><td>Required &mdash; identifies the integration source so Folloze can route the call through the appropriate ingress path.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Example</h4>
+  <pre><code>POST https://content-api.folloze.com/v1/items
+Authorization:     Basic &lt;your_api_token&gt;
+Content-Type:      application/json
+User-Agent:        Folloze
+Folloze-Initiator: Folloze
+
+{ ... }</code></pre>
+
+  <div class="callout warning">
+    <strong>Don't omit <code>User-Agent</code>.</strong> Many HTTP clients leave <code>User-Agent</code> off by default. Set it explicitly to <code>Folloze</code> on every write call.
+  </div>
+
+  <h2 id="base-url">Base URL <a class="anchor-link" href="#base-url">#</a></h2>
+  <p>Both the Board Creation API and the Content API are served from the same host:</p>
+  <pre><code>https://content-api.folloze.com</code></pre>
+  <p>All endpoint paths in this documentation are relative to this base URL.</p>
+
+  <h2 id="response-codes">Response codes <a class="anchor-link" href="#response-codes">#</a></h2>
+  <table>
+    <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="status-pill status-2xx">200</span></td><td>Success &mdash; payload returned in the response body.</td></tr>
+      <tr><td><span class="status-pill status-4xx">400</span></td><td>Malformed request (e.g. <code>sections</code> missing or not an array).</td></tr>
+      <tr><td><span class="status-pill status-4xx">401</span></td><td>Authentication missing or invalid.</td></tr>
+      <tr><td><span class="status-pill status-4xx">403</span></td><td>The API is not enabled in your Folloze organization.</td></tr>
+      <tr><td><span class="status-pill status-4xx">404</span></td><td>Template board (or referenced <code>footer_id</code>) not found in the organization.</td></tr>
+      <tr><td><span class="status-pill status-5xx">500</span></td><td>Unexpected server error.</td></tr>
+    </tbody>
+  </table>
+
+  <hr/>
+
+  <h2 id="concepts-sections">Concepts: sections, widgets, ribbons <a class="anchor-link" href="#concepts-sections">#</a></h2>
+  <p>A Folloze board is built from <strong>sections</strong> (e.g. a banner, a content block, a form). Each section contains one or more <strong>widgets</strong> (the actual content &mdash; a banner widget with <code>title</code>&nbsp;/&nbsp;<code>subtitle</code>&nbsp;/&nbsp;<code>cta</code>) and optionally <strong>ribbon parts</strong><button class="term-help" data-term="ribbon" aria-label="What is a ribbon?" aria-expanded="false">?</button> (background and decorative layers).</p>
+  <p>When you call the API, you describe each section as a JSON object that mirrors the API schema of the widgets that section uses.</p>
+
+  <h2 id="concepts-schema">API schema descriptors <a class="anchor-link" href="#concepts-schema">#</a></h2>
+  <p>Each widget exposes a small, stable contract &mdash; only the fields meant for external content are exposed. For example, the <strong>Banner</strong> widget exposes:</p>
+  <pre><code>{
+  "title": "string",
+  "subtitle": "string",
+  "cta": { "text": "string" },
+  "secondary_cta": { "text": "string" }
+}</code></pre>
+  <p>The <strong>Promo &mdash; Columns</strong> widget exposes a repeatable list of columns:</p>
+  <pre><code>{
+  "title": "string",
+  "subtitle": "string",
+  "cta": { "text": "string" },
+  "repeatable": {
+    "columns": [
+      {
+        "title": "string",
+        "subtitle": "string",
+        "paragraph": "string",
+        "cta": { "text": "string" },
+        "visibility": "boolean"
+      }
+    ]
+  }
+}</code></pre>
+  <p>Other widgets follow the same pattern (Single Item, Image Section, Side-by-side, Q&amp;A, Multi-tab, Carousel, etc.). Use <a href="#get-describe"><code>GET /v1/board_templates/:id/describe</code></a> to retrieve the exact descriptor for any template.</p>
+
+  <h2 id="concepts-identity">Section &amp; widget identity <a class="anchor-link" href="#concepts-identity">#</a></h2>
+  <p>The API matches sections by <code>section_id</code> &mdash; the id you receive from <a href="#get-describe"><code>GET /v1/board_templates/:id/describe</code></a> (stable across calls for the same template).</p>
+  <p>The same applies to widgets within a section: provide <code>widget_id</code> to update specific widgets; otherwise widgets are matched by their order.</p>
+
+  <div class="callout warning">
+    <strong>Two things to watch.</strong>
+    <ul style="margin: 6px 0 0;">
+      <li>If you don't include a <code>section_id</code> for a section, that section <strong>will not be added</strong> to the new board.</li>
+      <li>The order of sections in your <code>sections</code> array is meaningful &mdash; the new board's sections will appear in the same order you send them.</li>
+    </ul>
+  </div>
+
+  <h2 id="concepts-merge">Merge semantics <a class="anchor-link" href="#concepts-merge">#</a></h2>
+  <ul>
+    <li><strong>Omitted fields fall back to the template.</strong> If you don't include a field in your payload, the API uses the equivalent value from the template. Empty strings, on the other hand, are sent as-is and overwrite the template value.</li>
+    <li><strong>Nested objects</strong> are merged field-by-field &mdash; you only provide the keys you want to change.</li>
+    <li><strong>Repeatable arrays</strong> (e.g. <code>repeatable.columns</code>, <code>tabs.items</code>, <code>repeatable.items</code>) &mdash; items you don't include in your payload are <strong>removed</strong> from the new board. Include every item you want to keep.</li>
+    <li><strong>Sections present in the template but missing from your request</strong> are removed from the new board. Headers and footers are always preserved.</li>
+  </ul>
+
+  <hr/>
+
+  <h2 id="get-templates">List templates <a class="anchor-link" href="#get-templates">#</a></h2>
+  <div class="endpoint"><span class="method get" style="background:#dbeafe;color:#1e40af">GET</span><span>/v1/board_templates</span></div>
+  <p>Returns every template board in your organization with its <code>id</code>, <code>name</code>, and <code>description</code>. Use this to discover which templates are available before fetching schemas or creating boards &mdash; especially helpful when you don't already know the template ids.</p>
+
+  <h4>Example request</h4>
+  <div class="code-tabs">
+    <div class="tab-buttons">
+      <button class="tab-button active" onclick="switchTab(this,'templates-curl')">cURL</button>
+      <button class="tab-button" onclick="switchTab(this,'templates-node')">Node.js</button>
+      <button class="tab-button" onclick="switchTab(this,'templates-py')">Python</button>
+    </div>
+    <div id="templates-curl" class="tab-content active"><pre><code>curl https://content-api.folloze.com/v1/board_templates \
+  -H "Authorization: Basic $FOLLOZE_API_TOKEN"</code></pre></div>
+    <div id="templates-node" class="tab-content"><pre><code>const res = await fetch(
+  "https://content-api.folloze.com/v1/board_templates",
+  { headers: { Authorization: `Basic ${FOLLOZE_API_TOKEN}` } }
+);
+const templates = await res.json();</code></pre></div>
+    <div id="templates-py" class="tab-content"><pre><code>import requests
+res = requests.get(
+    "https://content-api.folloze.com/v1/board_templates",
+    headers={"Authorization": f"Basic {FOLLOZE_API_TOKEN}"},
+)
+templates = res.json()</code></pre></div>
+  </div>
+
+  <h4>Example response</h4>
+  <pre><code>[
+  {
+    "id": 178297,
+    "name": "CSM: Account Resource Center",
+    "description": "A customer-success hub for sharing onboarding guides, success plans, and key contacts with each account. Use as the home base for ongoing customer engagement. #csm #customer-success"
+  },
+  {
+    "id": 155459,
+    "name": "[Template] Digital Sales Room",
+    "description": "Digital Sales room for Folloze - \n\nHow to use:\n\nWithin the content section there are categories labelled \"Hidden\" where you an pull in the most used content straight into the actual categories. \n\n #Template #sales"
+  },
+  {
+    "id": 165922,
+    "name": "[Template] GeneratorAI",
+    "description": "Pre-wired template for boards generated by AI pipelines — every section's titles, subtitles, and CTAs are designed to be filled programmatically. Pair with a content pipeline that calls POST /v1/boards. #generative #template"
+  },
+  {
+    "id": 152644,
+    "name": "[BuyEx 3.0 Template] ABM 1:1",
+    "description": "1:1 personalized buyer experience for ABM plays — branded for a single target account, with sections for tailored value props, case studies, and a curated content library. #abm #buyex"
+  }
+]</code></pre>
+
+  <h4>Response fields</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>integer</td><td>Template id &mdash; pass this as <code>template_board_id</code> on <a href="#post-boards"><code>POST /v1/boards</code></a>, or as the <code>:id</code> path parameter on <a href="#get-describe"><code>GET /v1/board_templates/:id/describe</code></a>.</td></tr>
+      <tr><td><code>name</code></td><td>string</td><td>Display name of the template as set by the template owner in Folloze.</td></tr>
+      <tr><td><code>description</code></td><td>string</td><td>Template description (may be empty). Often used to capture intent, instructions, or hashtags &mdash; useful for filtering templates client-side.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Errors</h4>
+  <table>
+    <thead><tr><th>Status</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td><span class="status-pill status-4xx">401</span></td><td>Authentication is missing or invalid.</td></tr>
+      <tr><td><span class="status-pill status-4xx">403</span></td><td>Feature <code>board_creation_api</code> is disabled for the organization.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="get-describe">Describe template <a class="anchor-link" href="#get-describe">#</a></h2>
+  <div class="endpoint"><span class="method get" style="background:#dbeafe;color:#1e40af">GET</span><span>/v1/board_templates/:id/describe</span></div>
+  <p>Returns the full template structure: every body section (with the API schema of its widgets pre-populated with the template's current sample content), plus the <strong>header</strong> and <strong>footer</strong>, all in the format used for creation. Useful for &ldquo;round-tripping&rdquo; a template &mdash; read it, modify it, and post it back to create a new board.</p>
+
+  <h4>Example response</h4>
+  <pre><code>{
+  "header": {
+    "section_id": "s_f316586e",
+    "type": "header",
+    "name": "Header - original POC",
+    "widgets": {
+      "header": {
+        "primary_logo": {
+          "image": {
+            "url": "https://images.folloze.com/image/upload/v1759506309/vuo2cfwtclkhewhd5ryb.png"
+          }
+        },
+        "secondary_logo": {
+          "image": {
+            "url": "https://images.folloze.com/image/upload/v1776690426/aqmsxd15kdpeoj3pm3vi.svg"
+          }
+        },
+        "cta": {
+          "text": "Contact Us",
+          "action": {
+            "open_url": {
+              "url": ""
+            }
+          }
+        },
+        "color": {
+          "tag_line": "#000000"
+        },
+        "visibility": {
+          "primary_logo": true,
+          "show_logos": true,
+          "show_symbols": false,
+          "secondary_logo": true,
+          "tag_line": false,
+          "cta": false,
+          "share_button": false,
+          "navigation": false
+        },
+        "navigation": {}
+      },
+      "banner": {
+        "title": "&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading2\"&gt;&lt;span style=\"color: var(--fz-color-primary-1);\"&gt;Global. Simple. Unified. &lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading2\"&gt;&lt;span style=\"color: var(--fz-color-primary-1);\"&gt;It’s the Power of One&lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;span style=\"text-align: left;\"&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;span style=\"text-align: left; color: var(--fz-color-primary-1);\"&gt;How JLL will empower &lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;span style=\"text-align: left; color: var(--fz-color-primary-1);\"&gt;[insert target’s sector]&lt;/span&gt;&lt;span style=\"text-align: left;\"&gt; &lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;span style=\"color: var(--fz-color-primary-1);\"&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;br&gt;&lt;/div&gt;",
+        "subtitle": "&lt;div style=\"text-align: center;\" class=\"ql-style-heading4\"&gt;&lt;span style=\"color: var(--fz-color-primary-1);\"&gt;Enhance productivity, services and employee experiences with data center and workspace management solutions from JLL.&lt;/span&gt;&lt;/div&gt;",
+        "cta": {
+          "text": "Read your business case now"
+        },
+        "secondary_cta": {
+          "text": "Schedule a Demo"
+        }
+      }
+    },
+    "ribbonParts": []
+  },
+  "sections": [ /* same shape as the /sections response */ ],
+  "footer_id": 789
+}</code></pre>
+
+  <div class="callout tip">
+    <strong>Header anatomy varies by template.</strong> Folloze ships several header types (e.g. <em>Header with navigation</em>, <em>Header with 2 logos</em>, <em>Header - original POC</em>), and each one defines its own set of widgets. Don't assume a fixed shape &mdash; the exact <code>widgets</code> keys, fields, and <code>visibility</code> flags depend on the header type your template uses. Always read the actual <code>/describe</code> response for your template and round-trip what you receive (including the <code>name</code>, the full <code>visibility</code> map, and any rich-text HTML in titles/subtitles) when posting to <code>POST /v1/boards</code>.
+  </div>
+
+  <h4>Variation: header with two logos and inline navigation</h4>
+  <p>Different header types return different widget keys and fields. For example, a template using the <em>Header with 2 logos</em> type returns a <code>widgets.header</code> with a populated <code>navigation.items</code> array (instead of an empty <code>navigation: {}</code>) and no <code>banner</code> widget at all:</p>
+  <pre><code>{
+  "header": {
+    "section_id": "s_27da2d1a",
+    "type": "header",
+    "name": "Header with 2 logos",
+    "widgets": {
+      "header": {
+        "primary_logo": {
+          "image": {
+            "url": "https://images.folloze.com/image/upload/v1750030731/d7ajbarxztndszv8ywi8.png"
+          }
+        },
+        "secondary_logo": {
+          "image": {
+            "url": "",
+            "link": "",
+            "alt": ""
+          }
+        },
+        "cta": {
+          "text": "Contact Us",
+          "action": {
+            "open_url": {
+              "url": ""
+            }
+          }
+        },
+        "color": {
+          "tag_line": "#000000",
+          "symbol": "var(--fz-color-neutral-4)"
+        },
+        "visibility": {
+          "primary_logo": true,
+          "show_logos": true,
+          "show_symbols": true,
+          "secondary_logo": false,
+          "tag_line": false,
+          "cta": false,
+          "share_button": false,
+          "navigation": true
+        },
+        "navigation": {
+          "items": [
+            { "text": "Solutions",       "action": { "open_url": {} } },
+            { "text": "Why us",          "action": { "open_url": {} } },
+            { "text": "Success stories", "action": { "open_url": {} } },
+            { "text": "Product tour",    "action": { "open_url": {} } },
+            { "text": "Resources",       "action": { "open_url": {} } }
+          ]
+        }
+      }
+    },
+    "ribbonParts": []
+  }
+}</code></pre>
+
+  <h2 id="post-boards">Create a board <a class="anchor-link" href="#post-boards">#</a></h2>
+  <div class="endpoint"><span class="method post" style="background:#dcfce7;color:#166534">POST</span><span>/v1/boards</span></div>
+  <p>Creates a new board in the organization, copying the template's structure and applying your content.</p>
+
+  <h4>Request body</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>template_board_id</code></td><td>number</td><td><span class="req">required</span></td><td>Id of the template board to use.</td></tr>
+      <tr><td><code>sections</code></td><td>array</td><td><span class="req">required</span></td><td>Array of <a href="#section-object">section objects</a>. Sections in the template but missing here are removed from the new board.</td></tr>
+      <tr><td><code>board_name</code></td><td>string</td><td><span class="opt">optional</span></td><td>Display name. Defaults to <code>"Board from {template name}"</code>.</td></tr>
+      <tr><td><code>header</code></td><td>object</td><td><span class="opt">optional</span></td><td>Header overrides. The shape depends on the header type your template uses &mdash; fetch <a href="#get-describe"><code>/describe</code></a> to see the exact structure for your template.</td></tr>
+      <tr><td><code>footer_id</code></td><td>number</td><td><span class="opt">optional</span></td><td>Id of an existing footer <code>CampaignElement</code> in the organization.</td></tr>
+    </tbody>
+  </table>
+
+  <h4 id="section-object">Section object</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>section_id</code></td><td>string</td><td><span class="req">required</span></td><td>Id from <a href="#get-describe"><code>GET /describe</code></a>. Sections without a <code>section_id</code> are not added to the new board.</td></tr>
+      <tr><td><code>type</code></td><td>string</td><td><span class="opt">optional</span></td><td>Section type, typically <code>"body"</code>. Header / footer are managed via <code>header</code> and <code>footer_id</code>, not here.</td></tr>
+      <tr><td><code>ribbonParts</code></td><td>array</td><td><span class="opt">optional</span></td><td>Ribbon overrides; usually pass through what you got from <a href="#get-describe"><code>GET /describe</code></a>.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Example response</h4>
+  <pre><code>{
+  "board_id": 12345,
+  "board_url": "https://acme.boards.folloze.com/abcdef"
+}</code></pre>
+
+  <h4>Errors</h4>
+  <table>
+    <thead><tr><th>Status</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td><span class="status-pill status-4xx">400</span></td><td><code>sections</code> is missing or not an array.</td></tr>
+      <tr><td><span class="status-pill status-4xx">401</span></td><td>Authentication is missing or invalid.</td></tr>
+      <tr><td><span class="status-pill status-4xx">403</span></td><td>Feature <code>board_creation_api</code> is disabled for the organization.</td></tr>
+      <tr><td><span class="status-pill status-4xx">404</span></td><td><code>template_board_id</code> not found, or <code>footer_id</code> does not exist in the organization.</td></tr>
+    </tbody>
+  </table>
+
+  <hr/>
+
+  <h2 id="walkthrough">End-to-end walkthrough <a class="anchor-link" href="#walkthrough">#</a></h2>
+  <p>A common workflow has four steps: pick a template, read its schema, build a payload, create the board.</p>
+
+  <h3>Step 1 &mdash; Pick a template</h3>
+  <pre><code>GET /v1/board_templates
+Authorization: Basic &lt;your_api_token&gt;</code></pre>
+  <p>Returns every template board in your organization with its <code>id</code>, <code>name</code>, and <code>description</code>. Pick the template id you want to base the new board on (e.g. <code>4321</code>). If you already know the id (e.g. it's stored in your config), you can skip this step.</p>
+
+  <h3>Step 2 &mdash; Read the template's schema</h3>
+  <pre><code>GET /v1/board_templates/4321/describe
+Authorization: Basic &lt;your_api_token&gt;</code></pre>
+  <p>Save the response &mdash; it tells you which sections exist, which widgets they contain, what fields each widget exposes, and the header / footer to round-trip back to <code>POST /v1/boards</code>.</p>
+
+  <h3>Step 3 &mdash; Build your payload</h3>
+  <p>Take the response, replace the placeholder text with your real content, drop sections you don't want, and add your header.</p>
+  <pre><code>{
+  "template_board_id": 4321,
+  "board_name": "Q3 Campaign — Acme Corp",
+  "header": {
+    "primary_logo": { "url": "https://cdn.example.com/acme.png", "link": "https://acme.com", "alt": "Acme" },
+    "tagline": "Built for modern teams",
+    "navigation": [
+      { "text": "Solutions", "url": "https://acme.com/solutions" },
+      { "text": "Pricing",   "url": "https://acme.com/pricing" }
+    ],
+    "cta": { "text": "Talk to sales", "url": "https://acme.com/contact" }
+  },
+  "footer_id": 789,
+  "sections": [
+    {
+      "section_id": "s_abc123",
+      "name": "Banner - classic",
+      "widgets": [
+        {
+          "widget_id": "w_111",
+          "title": "Acme x Folloze",
+          "subtitle": "Personalized buyer experiences at scale",
+          "cta": { "text": "Get started" },
+          "secondary_cta": { "text": "Watch demo" }
+        }
+      ],
+      "ribbonParts": []
+    },
+    {
+      "section_id": "s_def456",
+      "name": "Columns - Value proposition 4 columns",
+      "widgets": [
+        {
+          "widget_id": "w_222",
+          "title": "Why Acme",
+          "subtitle": "Three reasons teams choose us",
+          "cta": { "text": "See all" },
+          "repeatable": {
+            "columns": [
+              { "title": "Faster onboarding",      "paragraph": "Go live in days, not months." },
+              { "title": "Personalized at scale",  "paragraph": "1:1 experiences for every account." },
+              { "title": "Built-in analytics",     "paragraph": "Know what works and double down." }
+            ]
+          }
+        }
+      ],
+      "ribbonParts": []
+    }
+  ]
+}</code></pre>
+
+  <h3>Step 4 &mdash; Create the board</h3>
+  <pre><code>POST /v1/boards
+Authorization: Basic &lt;your_api_token&gt;
+Content-Type: application/json
+
+&lt;body from step 3&gt;</code></pre>
+  <p>Response:</p>
+  <pre><code>{
+  "board_id": 99213,
+  "board_url": "https://acme.boards.folloze.com/q3-acme",
+  "sections": [
+    {
+      "section_id": "s_abc123",
+      "type": "body",
+      "name": "Banner - classic",
+      "widgets": [{ "widget_id": "w_888", "title": "Acme x Folloze", "subtitle": "..." }],
+      "ribbonParts": []
+    }
+  ]
+}</code></pre>
+  <p>You can now share <code>board_url</code> with your audience.</p>
+
+  <h2 id="best-practices">Best practices <a class="anchor-link" href="#best-practices">#</a></h2>
+
+  <h3>Treat templates as a schema</h3>
+  <ul>
+    <li><strong>Always start from <code>GET /describe</code>.</strong> Don't hand-craft section ids &mdash; fetch them and modify the response in place. This keeps your client robust to template changes.</li>
+    <li><strong>Use <code>widget_id</code> when you can.</strong> It keeps your payload safe from template re-orderings; index-based matching breaks the moment a template editor adds a widget above an existing one.</li>
+    <li><strong>Store the <code>section_id</code> / <code>widget_id</code> you receive on create.</strong> If you later add a &ldquo;regenerate this board&rdquo; flow, you can map your CRM fields to specific widgets without re-discovering ids.</li>
+    <li><strong>Keep templates stable.</strong> Significant template restructures change ids; treat templates the same way you would a database schema and version them deliberately.</li>
+  </ul>
+
+  <h3>Build a resilient client</h3>
+  <ul>
+    <li><strong>Validate before posting.</strong> A <span class="status-pill status-4xx">422</span> tells you exactly which path failed &mdash; surface it to your end-users so they can fix bad input.</li>
+    <li><strong>Cache the template descriptor</strong> in your application for the lifetime of a job. Calling <code>/sections</code> once per bulk run (rather than once per board) keeps you under rate limits and shaves wall-clock time.</li>
+    <li><strong>Retry idempotently.</strong> The <code>POST /v1/boards</code> call is <em>not</em> idempotent &mdash; a retried request creates a second board. Track the request you sent and the <code>board_id</code> you got back, and only retry on transient <span class="status-pill status-5xx">5xx</span>/network failures, not on validation errors.</li>
+    <li><strong>Backoff on 5xx.</strong> Use exponential backoff with jitter, capped at a reasonable ceiling (e.g. 30s).</li>
+  </ul>
+
+  <h3>Pair with the Content API</h3>
+  <p>The Board Creation API ships board <em>structure</em> &mdash; sections, widgets, headers. To bring assets into Folloze (from anywhere &mdash; URLs, files, videos, PDFs) and to place items on boards, see the <a href="#content-overview">Content API</a> below.</p>
+
+  <hr/>
+
+  <h2 id="content-overview">Content API <a class="anchor-link" href="#content-overview">#</a></h2>
+  <p class="lede">The Content API manages the <strong>content items</strong> in your Folloze organization &mdash; the URLs, files, videos, and PDFs that appear on boards. You can ingest assets from <em>any</em> external source (the asset doesn't need to exist in Folloze first), update them, search them, and place them on specific boards with per-board overrides.</p>
+
+  <h4>What it's for</h4>
+  <ul>
+    <li><strong>Ingest from anywhere</strong> &mdash; create items directly from any URL or downloadable asset, with no prior step in the Folloze UI.</li>
+    <li><strong>Sync your CMS</strong> &mdash; mirror your single source of truth into Folloze.</li>
+    <li><strong>Personalize per account</strong> &mdash; place the same item on many boards with a different title, description, or thumbnail on each, without duplicating the source asset.</li>
+    <li><strong>Search &amp; audit</strong> &mdash; list and filter items in your organization from external systems.</li>
+  </ul>
+
+  <h4>Endpoints at a glance</h4>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST /v1/items</code></td><td>Create a content item from any external source (URL, file, video, PDF).</td></tr>
+      <tr><td><code>GET /v1/items</code></td><td>List &amp; search items in your organization (filter by type, owner, tags, free text).</td></tr>
+      <tr><td><code>POST /v1/board_items</code></td><td>Place an existing item on a board.</td></tr>
+      <tr><td><code>PUT /v1/board_items/:id</code></td><td>Update a board item's<button class="term-help" data-term="board-item" aria-label="What is a board item?" aria-expanded="false">?</button> title, description, thumbnail, schedule, status, or categories<button class="term-help" data-term="category" aria-label="What is a category?" aria-expanded="false">?</button>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="content-auth">Authentication &amp; base URL <a class="anchor-link" href="#content-auth">#</a></h2>
+  <p>The Content API is served from the same host as the Board Creation API:</p>
+  <pre><code>https://content-api.folloze.com</code></pre>
+  <p>Authentication uses the same scheme as the Board Creation API &mdash; an API token in the <code>Authorization</code> header:</p>
+  <pre><code>Authorization: Basic &lt;your_api_token&gt;</code></pre>
+  <p>Tokens are issued per organization by Folloze. <strong>Contact your Folloze account representative to request a token</strong> &mdash; the same token grants access to both the Board Creation API and the Content API.</p>
+
+  <div class="callout warning">
+    <strong><code>creator_email</code> is required on every write.</strong> All <code>POST</code> calls require a <code>creator_email</code> field in the body, and the email <em>must</em> match a real user in your Folloze organization. Unknown emails return <code>{"message":"user not found for creator email"}</code>. Pass the email of a real seller / admin who should be recorded as the creator of the item.
+  </div>
+
+  <h2 id="content-list-items">List &amp; search content items <a class="anchor-link" href="#content-list-items">#</a></h2>
+  <div class="endpoint"><span class="method get" style="background:#dbeafe;color:#1e40af">GET</span><span>/v1/items</span></div>
+  <p>Returns a paginated list of content items in your organization, with filtering by type, owner, tags, and free text.</p>
+
+  <h4>Query parameters</h4>
+  <table>
+    <thead><tr><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>page</code></td><td>integer</td><td>1</td><td>Page number for pagination.</td></tr>
+      <tr><td><code>per_page</code></td><td>integer</td><td>24</td><td>Items per page (max 100).</td></tr>
+      <tr><td><code>sort_by</code></td><td>string</td><td>&mdash;</td><td>Field to sort results by.</td></tr>
+      <tr><td><code>sort_direction</code></td><td>string</td><td><code>desc</code></td><td><code>asc</code> or <code>desc</code>.</td></tr>
+      <tr><td><code>search</code></td><td>string</td><td>&mdash;</td><td>Free-text search across item content.</td></tr>
+      <tr><td><code>type[]</code></td><td>string</td><td>&mdash;</td><td>Filter by content type (e.g. <code>video</code>, <code>pdf</code>). Repeatable.</td></tr>
+      <tr><td><code>owner[]</code></td><td>string</td><td>&mdash;</td><td>Filter by owner user id. Repeatable.</td></tr>
+      <tr><td><code>tags[]</code></td><td>string</td><td>&mdash;</td><td>Filter by tag name<button class="term-help" data-term="tag" aria-label="What is a tag?" aria-expanded="false">?</button>. Repeatable.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <strong>Use the <code>[]</code> suffix on array params.</strong> Without it, only the last value wins. <code>?type=video&amp;type=pdf</code> filters by <code>pdf</code> only; <code>?type[]=video&amp;type[]=pdf</code> filters by both.
+  </div>
+
+  <h4>Examples</h4>
+  <div class="code-tabs">
+    <div class="tab-buttons">
+      <button class="tab-button active" onclick="switchTab(this,'items-curl')">cURL</button>
+      <button class="tab-button" onclick="switchTab(this,'items-node')">Node.js</button>
+      <button class="tab-button" onclick="switchTab(this,'items-py')">Python</button>
+    </div>
+    <div id="items-curl" class="tab-content active"><pre><code># Single filter
+curl "https://content-api.folloze.com/v1/items?type[]=video" \
+  -H "Authorization: Basic $FOLLOZE_API_TOKEN"
+
+# Combined filters
+curl "https://content-api.folloze.com/v1/items?type[]=video&amp;type[]=pdf&amp;owner[]=42&amp;tags[]=webinar&amp;search=demo&amp;page=1&amp;per_page=50&amp;sort_direction=asc" \
+  -H "Authorization: Basic $FOLLOZE_API_TOKEN"</code></pre></div>
+    <div id="items-node" class="tab-content"><pre><code>const params = new URLSearchParams();
+["video", "pdf"].forEach(t =&gt; params.append("type[]", t));
+params.append("owner[]", "42");
+params.append("tags[]", "webinar");
+params.set("search", "demo");
+params.set("per_page", "50");
+
+const res = await fetch(
+  `https://content-api.folloze.com/v1/items?${params}`,
+  { headers: { Authorization: `Basic ${FOLLOZE_API_TOKEN}` } }
+);
+const items = await res.json();</code></pre></div>
+    <div id="items-py" class="tab-content"><pre><code>import requests
+res = requests.get(
+    "https://content-api.folloze.com/v1/items",
+    headers={"Authorization": f"Basic {FOLLOZE_API_TOKEN}"},
+    params=[
+        ("type[]", "video"), ("type[]", "pdf"),
+        ("owner[]", "42"),
+        ("tags[]", "webinar"),
+        ("search", "demo"),
+        ("per_page", 50),
+    ],
+)
+items = res.json()</code></pre></div>
+  </div>
+
+  <h2 id="content-create-item">Create a content item <a class="anchor-link" href="#content-create-item">#</a></h2>
+  <div class="endpoint"><span class="method post" style="background:#dcfce7;color:#166534">POST</span><span>/v1/items</span></div>
+  <p>Creates a new content item in your Folloze organization from any external source. The asset itself does <strong>not</strong> need to exist in Folloze beforehand &mdash; provide a public URL (for link items) or a downloadable URL (for file items) and Folloze ingests it. File items are ingested asynchronously &mdash; see <a href="#content-async">Async file ingest</a>.</p>
+
+  <h4>Request body (key fields)</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>creator_email</code></td><td>string</td><td><span class="req">required</span></td><td>Email of an existing user in the organization. Recorded as the item's creator.</td></tr>
+      <tr><td><code>title</code></td><td>string</td><td><span class="req">required</span></td><td>Display title of the item.</td></tr>
+      <tr><td><code>description</code></td><td>string</td><td><span class="opt">optional</span></td><td>Long-form description.</td></tr>
+      <tr><td><code>thumbnail_url</code></td><td>string</td><td><span class="opt">optional</span></td><td>Cover image URL. If omitted, Folloze will attempt to derive one.</td></tr>
+      <tr><td><code>download_url</code></td><td>string</td><td>conditional</td><td>For file-type items: the public URL Folloze will pull the asset from.</td></tr>
+      <tr><td><code>url</code></td><td>string</td><td>conditional</td><td>For URL-type items: the destination URL the item links to.</td></tr>
+      <tr><td><code>tags</code></td><td>string[]</td><td><span class="opt">optional</span></td><td>Tag names to apply. New tags are created on demand.</td></tr>
+      <tr><td><code>board_item</code></td><td>object</td><td><span class="opt">optional</span></td><td>If present, also places the newly created item on a board in the same call. Saves a round-trip when you're ingesting and placing in one shot. See <a href="#content-categories">Categories</a> for the nested <code>categories</code> shape.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Response</h4>
+  <p>Successful create returns <span class="status-pill status-2xx">202 Accepted</span> with a tracking payload:</p>
+  <pre><code>{
+  "folloze_id": 770029,
+  "provider_asset_id": "abc123",
+  "provider_name": "folloze"
+}</code></pre>
+
+  <h2 id="content-create-board-item">Attach an item to a board <a class="anchor-link" href="#content-create-board-item">#</a></h2>
+  <div class="endpoint"><span class="method post" style="background:#dcfce7;color:#166534">POST</span><span>/v1/board_items</span></div>
+  <p>Places an existing content item on a board <strong>without creating a duplicate</strong>. Per-board presentation fields (title, description, thumbnail, tags, schedule, categories) override the source item's defaults <em>only on this board</em> &mdash; the source item is never mutated.</p>
+
+  <div class="callout tip">
+    <strong>The "personalize at scale" pattern.</strong> Keep one canonical content item, then place it on N account-personalized boards with a different per-board title, thumbnail, and tag mix on each. Updating the source item later won't overwrite the per-board overrides you set.
+  </div>
+
+  <div class="callout tip">
+    <strong>Need to bring in a brand-new asset?</strong> Use <a href="#content-create-item"><code>POST /v1/items</code></a> first to create the item from its source URL, then call this endpoint with the returned id. Or do both in a single call by including a <code>board_item</code> object on the create request.
+  </div>
+
+  <h4>Request body</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>board_id</code></td><td>integer</td><td><span class="req">required</span></td><td>Target board id.</td></tr>
+      <tr><td><code>content_center_item_id</code></td><td>integer</td><td><span class="req">required</span></td><td>Id of the existing content item to place on the board (returned from <a href="#content-create-item"><code>POST /v1/items</code></a> or <a href="#content-list-items"><code>GET /v1/items</code></a>).</td></tr>
+      <tr><td><code>creator_email</code></td><td>string</td><td><span class="req">required</span></td><td>Email of an existing user; recorded as the board-item creator.</td></tr>
+      <tr><td><code>title</code></td><td>string</td><td><span class="opt">optional</span></td><td>Per-board title override.</td></tr>
+      <tr><td><code>description</code></td><td>string</td><td><span class="opt">optional</span></td><td>Per-board description override.</td></tr>
+      <tr><td><code>thumbnail_url</code></td><td>string</td><td><span class="opt">optional</span></td><td>Per-board thumbnail override.</td></tr>
+      <tr><td><code>tags</code></td><td>string[]</td><td><span class="opt">optional</span></td><td>Per-board tags.</td></tr>
+      <tr><td><code>status</code></td><td>string</td><td><span class="opt">optional</span></td><td><code>online</code> or <code>offline</code>.</td></tr>
+      <tr><td><code>is_gated</code></td><td>boolean</td><td><span class="opt">optional</span></td><td>Whether viewing the item requires a form fill.</td></tr>
+      <tr><td><code>open_in_new_tab</code></td><td>boolean</td><td><span class="opt">optional</span></td><td>Open destination in a new tab.</td></tr>
+      <tr><td><code>schedule</code></td><td>object &#124; <code>false</code></td><td><span class="opt">optional</span></td><td>Visibility window. Pass <code>false</code> to clear any schedule. Object shape: <code>{ start_unix, end_unix, timezone }</code>.</td></tr>
+      <tr><td><code>categories</code></td><td>array</td><td><span class="opt">optional</span></td><td>Categories to place this item under on the board. See <a href="#content-categories">Categories</a>.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Example request</h4>
+  <pre><code>POST https://content-api.folloze.com/v1/board_items
+Authorization: Basic &lt;your_api_token&gt;
+Content-Type: application/json
+
+{
+  "board_id": 241976,
+  "content_center_item_id": 509798,
+  "creator_email": "admin@follozeqa.com",
+  "title": "Shaping Tomorrow's Cities — for JLL",
+  "description": "Human-centric development insights tailored for this account.",
+  "thumbnail_url": "https://images.folloze.com/image/upload/hsvolbwawc9krdqmybvs.png",
+  "tags": ["JLL", "Creating a Space"],
+  "status": "online",
+  "is_gated": false,
+  "open_in_new_tab": true,
+  "schedule": {
+    "start_unix": 1714500000,
+    "end_unix":   1717092000,
+    "timezone":   "America/New_York"
+  },
+  "categories": [
+    { "name": "Product Updates" },
+    { "name": "Customer Stories" }
+  ]
+}</code></pre>
+
+  <h2 id="content-update-board-item">Update a board item <a class="anchor-link" href="#content-update-board-item">#</a></h2>
+  <div class="endpoint"><span class="method put" style="background:#fef3c7;color:#92400e">PUT</span><span>/v1/board_items/:id</span></div>
+  <p>Updates the per-board overrides for an existing board item: title, description, thumbnail, schedule, status, and categories. The underlying source content item is never modified.</p>
+
+  <h4>Path parameters</h4>
+  <table>
+    <thead><tr><th>Name</th><th>Type</th><th></th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>integer</td><td><span class="req">required</span></td><td>Id of the board item (returned when you created it via <code>POST /v1/board_items</code>).</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Request body</h4>
+  <p>Same fields as <a href="#content-create-board-item">attach to board</a>, except <code>board_id</code> and <code>content_center_item_id</code> are not changeable. Only fields you include are updated &mdash; omit a field to leave it as-is.</p>
+
+  <h4>Example request</h4>
+  <pre><code>PUT https://content-api.folloze.com/v1/board_items/2207832
+Authorization: Basic &lt;your_api_token&gt;
+Content-Type: application/json
+
+{
+  "title": "Test of update",
+  "description": "Updated walkthrough of the new platform capabilities.",
+  "thumbnail_url": "https://images.folloze.com/image/upload/hsvolbwawc9krdqmybvs.png",
+  "status": "online",
+  "is_gated": true,
+  "open_in_new_tab": true,
+  "schedule": {
+    "start_unix": 1714500000,
+    "end_unix":   1717092000,
+    "timezone":   "America/New_York"
+  },
+  "categories": [
+    { "name": "Product Updates" },
+    { "name": "Customer Stories" }
+  ]
+}</code></pre>
+
+  <h2 id="content-categories">Categories &amp; subcategories<button class="term-help" data-term="subcategory" aria-label="What is a subcategory?" aria-expanded="false">?</button> <a class="anchor-link" href="#content-categories">#</a></h2>
+  <p>The <code>categories</code> field on board-item endpoints lets you place an item under one or more categories on the board. Each entry can be specified <strong>by name</strong> (created on demand if missing) or <strong>by id</strong> (must already exist; otherwise the call fails).</p>
+
+  <h4>Shape</h4>
+  <pre><code>{
+  "categories": [
+    {
+      "name": "Marketing",
+      "sub_categories": [
+        { "name": "Email Campaigns" },
+        { "id":   456 }
+      ]
+    },
+    { "id": 789 }
+  ]
+}</code></pre>
+
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>string</td><td>Category name. Found on the board if it exists; created if it doesn't.</td></tr>
+      <tr><td><code>id</code></td><td>integer</td><td>Existing category id. Errors if not found on this board.</td></tr>
+      <tr><td><code>sub_categories</code></td><td>array</td><td>Same name/id rules; nested under the parent category.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <strong>Prefer <code>name</code> for cross-board sync.</strong> If your CMS has stable category names but the board ids differ across organizations, name-based addressing lets the same payload work everywhere. Use <code>id</code> only when you've cached ids from a previous response.
+  </div>
+
+  <div class="callout warning">
+    <strong>Legacy field.</strong> Earlier integrations used <code>board_item.category_ids</code> (a flat integer array). It still works for backwards compatibility, but new integrations should use <code>categories</code> &mdash; it supports name-based lookup and nested subcategories.
+  </div>
+
+  <h2 id="content-async">Async file ingest <a class="anchor-link" href="#content-async">#</a></h2>
+  <p>When you create a <strong>file</strong>-type item with a <code>download_url</code>, Folloze responds immediately with <span class="status-pill status-2xx">202 Accepted</span> and ingests the file asynchronously by pulling it from the URL you provided.</p>
+
+  <h4>What this means for your client</h4>
+  <ul>
+    <li>The <code>folloze_id</code> in the response is valid right away &mdash; you can attach the item to boards immediately.</li>
+    <li>The actual file content (and any derived previews / thumbnails) becomes available once ingest completes &mdash; usually seconds to minutes depending on size.</li>
+    <li>Make sure <code>download_url</code> is publicly reachable (or signed with a long enough TTL) until ingest finishes.</li>
+    <li>If ingest fails, the item is created but its file payload is empty. Re-create or update the item with a fresh <code>download_url</code>.</li>
+  </ul>
+
+  <hr/>
+
+  <h1 id="glossary">Folloze 101 &mdash; Key concepts</h1>
+  <p class="lede">New to Folloze? This is a quick tour of the things the API talks about &mdash; boards, sections, content items, and the rest. Anywhere a term is marked with a <span class="term-help-inline">?</span> in the API docs above, this is the page that's being linked to.</p>
+
+  <h2>The big picture</h2>
+  <p>A <strong>board</strong> is a personalized web page you share with buyers. Boards are built from <strong>sections</strong> (banner, content block, form, etc.), and each section is populated with <strong>content items</strong> from your Folloze organization. Marketers usually start by designing a <strong>template board</strong> in the Folloze UI, then the API takes that template and stamps out personalized copies of it &mdash; one per account, campaign, or event.</p>
+
+  <h2>Boards</h2>
+  <table>
+    <thead><tr><th>Term</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Board</strong></td>
+        <td>A published web page in Folloze &mdash; the thing buyers actually visit. It has a unique <code>board_url</code> (e.g. <code>acme.boards.folloze.com/q3-acme</code>) and is made up of a header, a stack of body sections, and a footer. <a href="https://help.folloze.com/s/topic/0TOQj0000000JyjOAE/creating-folloze-boards" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Template board</strong></td>
+        <td>A board that's been marked as a template inside Folloze. Templates are the starting point for new boards &mdash; you take a template, fill in account-specific copy and content, and the API produces a new board based on it. Designers create templates in the Folloze UI. <a href="https://help.folloze.com/s/article/Tips-to-Build-a-Better-Board" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Header</strong></td>
+        <td>The bar at the top of a board: logo(s), navigation links, an optional top-bar CTA, and a tagline. Folloze ships several pre-designed header types (e.g. <em>Header with navigation</em>, <em>Header with 2 logos</em>) &mdash; the template's designer picks which one to use. <a href="https://help.folloze.com/s/article/Designing-a-Header-bx3" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Footer</strong></td>
+        <td>The bottom area of a board (links, legal, social). Footers are reusable across boards in your organization; you reference one by id when creating a board. <a href="https://help.folloze.com/s/article/Setting-Up-a-Board-s-Header-Footer" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Sections &amp; ribbons</h2>
+  <table>
+    <thead><tr><th>Term</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Section</strong></td>
+        <td>A horizontal block of a board &mdash; for example, a hero banner, a 4-column value-prop block, a content carousel, or a contact form. The body of a board is just an ordered list of sections. <a href="https://help.folloze.com/s/article/Working-with-Board-Sections" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Ribbon</strong> <em>(API term)</em></td>
+        <td>Optional background or decorative layer behind a section &mdash; e.g. a coloured shape, a gradient, an image. Ribbons are part of the template's visual design and aren't surfaced as a distinct concept in the Folloze UI; in API calls you usually pass them through unchanged from <code>/describe</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Content items</h2>
+  <table>
+    <thead><tr><th>Term</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Content item</strong></td>
+        <td>A single asset in your Folloze organization. There are two main types: <strong>links</strong> (URLs &mdash; web pages, articles, third-party content) and <strong>files</strong> (PDFs, slide decks, videos, images, etc.). Content items live independently of any board; one item can appear on many boards. <a href="https://help.folloze.com/hc/en-us/articles/360044307633-Adding-an-Item-to-the-Content-Center" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Content Center</strong></td>
+        <td>The place inside Folloze where all of your organization's content assets are hosted &mdash; PDFs, slides, videos, links, images, and so on. It's the central library every board pulls content from, and it's the same library the API exposes via <code>GET /v1/items</code>. <a href="https://help.folloze.com/hc/en-us/articles/360044307413-Content-Center-Overview" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Board item</strong></td>
+        <td>A content item that's been placed onto a specific board. You can override the title, description, thumbnail, tags, and visibility schedule per board &mdash; without changing the underlying content item. So one canonical case study can appear on twenty different boards with twenty different account-specific titles. <a href="https://help.folloze.com/s/article/Adding-a-Content-Center-Item-to-a-Board" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Category</strong></td>
+        <td>A grouping bucket for board items on a section &mdash; e.g. &ldquo;Product Updates&rdquo;, &ldquo;Customer Stories&rdquo;. Categories are defined per board and used to organize content into tabs/columns/etc. <a href="https://help.folloze.com/s/article/Creating-Categories-of-Content-Items" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Subcategory</strong></td>
+        <td>A category nested under another category. Same rules &mdash; you can address them by name or by id. <a href="https://help.folloze.com/s/article/Creating-Categories-of-Content-Items" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Tag</strong></td>
+        <td>A free-form label applied to a content item. Used for searching/filtering items via <code>GET /v1/items?tags[]=&hellip;</code>. New tags are created on demand when you reference them. <a href="https://help.folloze.com/s/article/Editing-a-Board" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>How they fit together</h2>
+  <p>From the API's perspective, generating a personalized board for an account looks like this:</p>
+  <ol>
+    <li>Start with a <strong>template board</strong> the marketing team designed in the Folloze UI.</li>
+    <li>Read the template's <strong>sections</strong> and <strong>widgets</strong> to see which fields you can fill.</li>
+    <li>Send a <code>POST /v1/boards</code> with account-specific copy &mdash; you get back a new <strong>board</strong> with its own URL.</li>
+    <li>Optionally add or update <strong>content items</strong> in your library, then place them on the new board as <strong>board items</strong> with per-board titles, thumbnails, and categories.</li>
+    <li>Share the board URL with your buyer.</li>
+  </ol>
+
+  </main>
+</div>
+</div>
