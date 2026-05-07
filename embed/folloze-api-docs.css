@@ -397,20 +397,8 @@
     transition: opacity 0.15s;
   }
 .flz-docs h2:hover .anchor-link, .flz-docs h3:hover .anchor-link { opacity: 1; }
-/* Responsive */
-  @media (max-width: 900px) {
-    .layout { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: static; }
-    .content { padding: 24px; }
-  }
 /* ==========================================================
    Embed-mode overrides
-   ----------------------------------------------------------
-   - Sidebar stays pinned at the top of the embed via
-     position: sticky, exposing every link without an internal
-     scroll.
-   - Body flows at its natural length; the host page handles
-     scrolling. No fixed-height bound, no inner scrollbar.
    ========================================================== */
 .flz-docs {
     overflow: visible;
@@ -418,19 +406,135 @@
 }
 .flz-docs .layout {
     display: flex;
-    align-items: flex-start; /* sidebar = its own natural height */
+    align-items: flex-start;
     min-height: 0;
     height: auto;
 }
 .flz-docs .sidebar {
-    position: sticky !important;
-    top: 0 !important;
+    position: sticky;
+    top: 0;
     align-self: flex-start;
-    height: auto !important;
-    max-height: 100vh;       /* if sidebar is taller than viewport, allow internal scroll as a fallback */
+    height: auto;
+    max-height: 100vh;
     overflow-y: auto;
 }
 .flz-docs .content {
     overflow: visible;
     height: auto;
+}
+
+/* Mobile menu toggle */
+.flz-docs .mobile-header {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    align-items: center;
+    gap: 12px;
+}
+.flz-docs .mobile-header .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    padding: 0;
+    color: var(--text);
+}
+.flz-docs .mobile-header .menu-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.flz-docs .mobile-header .menu-btn svg { width: 20px; height: 20px; }
+.flz-docs .mobile-header .mobile-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    letter-spacing: 0.3px;
+}
+.flz-docs .mobile-header .mobile-title .beta {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    margin-left: 4px;
+    vertical-align: 1px;
+}
+.flz-docs .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,16,36,0.45);
+    z-index: 45;
+}
+.flz-docs .sidebar-backdrop.open { display: block; }
+
+/* Responsive: tablet */
+@media (max-width: 1024px) {
+    .flz-docs .sidebar { width: 240px; }
+    .flz-docs .content { padding: 48px 40px 80px; }
+    .flz-docs h1 { font-size: 32px; }
+    .flz-docs h2 { font-size: 22px; margin-top: 48px; }
+}
+
+/* Responsive: mobile */
+@media (max-width: 768px) {
+    .flz-docs { font-size: 14.5px; line-height: 1.6; }
+    .flz-docs .layout { flex-direction: column; }
+    .flz-docs .mobile-header { display: flex; }
+    .flz-docs .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 280px !important;
+        max-width: 85vw;
+        height: 100vh !important;
+        max-height: none !important;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        z-index: 50;
+        box-shadow: 0 20px 50px rgba(15,16,36,0.18);
+    }
+    .flz-docs .sidebar.open { transform: translateX(0); }
+    .flz-docs .content { max-width: 100%; padding: 20px 18px 64px; }
+    .flz-docs h1 { font-size: 26px; letter-spacing: -0.4px; }
+    .flz-docs h2 { font-size: 20px; margin: 40px 0 14px; }
+    .flz-docs h3 { font-size: 17px; margin: 28px 0 10px; }
+    .flz-docs .lede { font-size: 16px; margin-bottom: 22px; }
+    .flz-docs .endpoint {
+        flex-wrap: wrap; gap: 8px 10px; padding: 12px 14px;
+        font-size: 12.5px; word-break: break-all;
+    }
+    .flz-docs .endpoint .method { font-size: 11px; padding: 3px 8px; }
+    .flz-docs table {
+        display: block; overflow-x: auto; white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    .flz-docs th, .flz-docs td { padding: 10px 12px; font-size: 13.5px; }
+    .flz-docs th { font-size: 11px; }
+    .flz-docs pre { padding: 14px 16px; font-size: 12.5px; border-radius: 8px; }
+    .flz-docs .code-tabs { margin: 14px -4px 22px; border-radius: 8px; }
+    .flz-docs .tab-buttons { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .flz-docs .tab-button { padding: 9px 14px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+    .flz-docs .callout { padding: 12px 14px; font-size: 13.5px; }
+    .flz-docs .term-popover { width: calc(100vw - 32px); max-width: 320px; }
+    .flz-docs hr { margin: 40px 0; }
+}
+
+@media (max-width: 380px) {
+    .flz-docs h1 { font-size: 24px; }
+    .flz-docs .content { padding: 16px 14px 56px; }
+    .flz-docs .endpoint { font-size: 11.5px; }
 }
