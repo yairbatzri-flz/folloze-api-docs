@@ -422,21 +422,161 @@
   }
   h2:hover .anchor-link, h3:hover .anchor-link { opacity: 1; }
 
-  /* Responsive */
-  @media (max-width: 900px) {
+  /* Mobile menu toggle */
+  .mobile-header {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    align-items: center;
+    gap: 12px;
+  }
+  .mobile-header .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    padding: 0;
+    color: var(--text);
+  }
+  .mobile-header .menu-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .mobile-header .menu-btn svg { width: 20px; height: 20px; }
+  .mobile-header .mobile-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    letter-spacing: 0.3px;
+  }
+  .mobile-header .mobile-title .beta {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    margin-left: 4px;
+    vertical-align: 1px;
+  }
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,16,36,0.45);
+    z-index: 45;
+  }
+  .sidebar-backdrop.open { display: block; }
+
+  /* Responsive: tablet */
+  @media (max-width: 1024px) {
+    .sidebar { width: 240px; }
+    .content { padding: 48px 40px 80px; }
+    h1 { font-size: 32px; }
+    h2 { font-size: 22px; margin-top: 48px; }
+  }
+
+  /* Responsive: mobile */
+  @media (max-width: 768px) {
+    body { font-size: 14.5px; line-height: 1.6; }
     .layout { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: static; }
-    .content { padding: 24px; }
+
+    .mobile-header { display: flex; }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      max-width: 85vw;
+      height: 100vh;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      z-index: 50;
+      box-shadow: 0 20px 50px rgba(15,16,36,0.18);
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .content {
+      max-width: 100%;
+      padding: 20px 18px 64px;
+    }
+
+    h1 { font-size: 26px; letter-spacing: -0.4px; }
+    h2 { font-size: 20px; margin: 40px 0 14px; }
+    h3 { font-size: 17px; margin: 28px 0 10px; }
+    .lede { font-size: 16px; margin-bottom: 22px; }
+
+    /* Endpoint header stacks on mobile */
+    .endpoint {
+      flex-wrap: wrap;
+      gap: 8px 10px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+      word-break: break-all;
+    }
+    .endpoint .method { font-size: 11px; padding: 3px 8px; }
+
+    /* Tables: horizontal scroll wrapper */
+    table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+    th, td { padding: 10px 12px; font-size: 13.5px; }
+    th { font-size: 11px; }
+
+    /* Code blocks */
+    pre { padding: 14px 16px; font-size: 12.5px; border-radius: 8px; }
+    pre code { font-size: 12.5px; }
+    .code-tabs { margin: 14px -4px 22px; border-radius: 8px; }
+    .tab-buttons { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tab-button { padding: 9px 14px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+
+    /* Callouts */
+    .callout { padding: 12px 14px; font-size: 13.5px; }
+
+    /* Term popovers stay within viewport */
+    .term-popover { width: calc(100vw - 32px); max-width: 320px; }
+
+    hr { margin: 40px 0; }
+  }
+
+  /* Responsive: small mobile */
+  @media (max-width: 380px) {
+    h1 { font-size: 24px; }
+    .content { padding: 16px 14px 56px; }
+    .endpoint { font-size: 11.5px; }
   }
 </style>
 </head>
 <body>
+<header class="mobile-header">
+  <button class="menu-btn" id="menuToggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="mobile-title">Folloze API <span class="beta">BETA</span></div>
+</header>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="layout">
 
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <img class="logo-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMnxz7B14tExoV7l1w8KcWVvbKnCelq2r__C3Se6vmHw&s&ec=121643214" alt="Folloze" />
-      <div class="product">Public APIs &middot; v0.1 <span class="beta">BETA</span></div>
+      <div class="product">Public APIs &middot; v1.1 <span class="beta">BETA</span></div>
     </div>
     <nav>
       <h4>Folloze API</h4>
@@ -1364,6 +1504,39 @@ Content-Type: application/json
 </div>
 
 <script>
+  // Mobile sidebar toggle
+  (function() {
+    const toggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (!toggle || !sidebar || !backdrop) return;
+    function openMenu() {
+      sidebar.classList.add('open');
+      backdrop.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+    toggle.addEventListener('click', () => {
+      sidebar.classList.contains('open') ? closeMenu() : openMenu();
+    });
+    backdrop.addEventListener('click', closeMenu);
+    sidebar.addEventListener('click', (e) => {
+      if (e.target.tagName === 'A') closeMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMenu();
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) closeMenu();
+    });
+  })();
+
   function switchTab(btn, contentId) {
     const tabs = btn.parentElement;
     tabs.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));

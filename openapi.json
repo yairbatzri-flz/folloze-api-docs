@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Folloze API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Folloze public APIs for programmatically generating boards from templates and managing content items. Two complementary REST APIs share the same base URL, authentication, and conventions:\n\n- **Board Creation API** — generate Folloze boards from template boards (structure, sections, widgets, headers, footers).\n- **Content API** — create content items from any source, search them, and place them on boards with per-board overrides.\n\nA single API token issued by Folloze unlocks both. To request a token, contact your Folloze account representative.",
     "contact": {
       "name": "Folloze Support",
