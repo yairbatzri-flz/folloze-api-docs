@@ -3,7 +3,7 @@
   <button class="menu-btn" id="flzMenuToggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="flzSidebar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
-  <div class="mobile-title">Folloze API <span class="beta">BETA</span></div>
+  <div class="mobile-title">Folloze API</div>
 </header>
 <div class="sidebar-backdrop" id="flzSidebarBackdrop"></div>
 <div class="layout">
@@ -47,7 +47,6 @@
 
       <h4>Guides</h4>
       <a href="#walkthrough">End-to-end walkthrough</a>
-      <a href="#best-practices">Best practices</a>
 
       <h4>New to Folloze?</h4>
       <a href="#glossary">Folloze 101 &mdash; Key concepts</a>
@@ -559,27 +558,6 @@ Content-Type: application/json
   ]
 }</code></pre>
   <p>You can now share <code>board_url</code> with your audience.</p>
-
-  <h2 id="best-practices">Best practices <a class="anchor-link" href="#best-practices">#</a></h2>
-
-  <h3>Treat templates as a schema</h3>
-  <ul>
-    <li><strong>Always start from <code>GET /describe</code>.</strong> Don't hand-craft section ids &mdash; fetch them and modify the response in place. This keeps your client robust to template changes.</li>
-    <li><strong>Use <code>widget_id</code> when you can.</strong> It keeps your payload safe from template re-orderings; index-based matching breaks the moment a template editor adds a widget above an existing one.</li>
-    <li><strong>Store the <code>section_id</code> / <code>widget_id</code> you receive on create.</strong> If you later add a &ldquo;regenerate this board&rdquo; flow, you can map your CRM fields to specific widgets without re-discovering ids.</li>
-    <li><strong>Keep templates stable.</strong> Significant template restructures change ids; treat templates the same way you would a database schema and version them deliberately.</li>
-  </ul>
-
-  <h3>Build a resilient client</h3>
-  <ul>
-    <li><strong>Validate before posting.</strong> A <span class="status-pill status-4xx">422</span> tells you exactly which path failed &mdash; surface it to your end-users so they can fix bad input.</li>
-    <li><strong>Cache the template descriptor</strong> in your application for the lifetime of a job. Calling <code>/sections</code> once per bulk run (rather than once per board) keeps you under rate limits and shaves wall-clock time.</li>
-    <li><strong>Retry idempotently.</strong> The <code>POST /v1/boards</code> call is <em>not</em> idempotent &mdash; a retried request creates a second board. Track the request you sent and the <code>board_id</code> you got back, and only retry on transient <span class="status-pill status-5xx">5xx</span>/network failures, not on validation errors.</li>
-    <li><strong>Backoff on 5xx.</strong> Use exponential backoff with jitter, capped at a reasonable ceiling (e.g. 30s).</li>
-  </ul>
-
-  <h3>Pair with the Content API</h3>
-  <p>The Board Creation API ships board <em>structure</em> &mdash; sections, widgets, headers. To bring assets into Folloze (from anywhere &mdash; URLs, files, videos, PDFs) and to place items on boards, see the <a href="#content-overview">Content API</a> below.</p>
 
   <hr/>
 

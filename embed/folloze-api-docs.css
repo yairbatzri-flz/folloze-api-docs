@@ -498,8 +498,8 @@
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
-        width: 280px !important;
-        max-width: 85vw;
+        width: 288px !important;
+        max-width: 88vw;
         height: 100vh !important;
         max-height: none !important;
         transform: translateX(-100%);
