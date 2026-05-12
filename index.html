@@ -622,6 +622,9 @@
 
       <h4>New to Folloze?</h4>
       <a href="#glossary">Folloze 101 &mdash; Key concepts</a>
+
+      <h4>Reference</h4>
+      <a href="#changelog">Changelog</a>
     </nav>
   </aside>
 
@@ -1011,6 +1014,10 @@ templates = res.json()</code></pre></div>
       <tr><td><code>board_name</code></td><td>string</td><td><span class="opt">optional</span></td><td>Display name. Defaults to <code>"Board from {template name}"</code>.</td></tr>
       <tr><td><code>header</code></td><td>object</td><td><span class="opt">optional</span></td><td>Header overrides. The shape depends on the header type your template uses &mdash; fetch <a href="#get-describe"><code>/describe</code></a> to see the exact structure for your template.</td></tr>
       <tr><td><code>footer_id</code></td><td>number</td><td><span class="opt">optional</span></td><td>Id of an existing footer <code>CampaignElement</code> in the organization.</td></tr>
+      <tr><td><code>owner_email</code></td><td>string</td><td><span class="opt">optional</span></td><td>Email of an existing Folloze user to assign as the board owner. Must match a user in the organization. If omitted, the board is owned by the first admin of the organization.</td></tr>
+      <tr><td><code>tags</code></td><td>string[]</td><td><span class="opt">optional</span></td><td>Board tags<button class="term-help" data-term="board-tag" aria-label="What is a board tag?" aria-expanded="false">?</button> to apply. New tags are created on demand; existing tags are reused.</td></tr>
+      <tr><td><code>state</code></td><td>string</td><td><span class="opt">optional</span></td><td>Initial board state<button class="term-help" data-term="board-state" aria-label="What is a board state?" aria-expanded="false">?</button>. Accepted values: <code>"online"</code> (published) or <code>"draft"</code>. Defaults to <code>"draft"</code>.</td></tr>
+      <tr><td><code>channels</code></td><td>array</td><td><span class="opt">optional</span></td><td>Channels<button class="term-help" data-term="channel" aria-label="What is a channel?" aria-expanded="false">?</button> to add the new board to. Each entry is <code>{ "name": "..." }</code> &mdash; matched by exact name (case-sensitive, no whitespace trimming); the board joins the existing channel if a match is found, otherwise a new channel is created with this name. See <a href="#board-channels">Channels</a>.</td></tr>
     </tbody>
   </table>
 
@@ -1021,6 +1028,21 @@ templates = res.json()</code></pre></div>
       <tr><td><code>section_id</code></td><td>string</td><td><span class="req">required</span></td><td>Id from <a href="#get-describe"><code>GET /describe</code></a>. Sections without a <code>section_id</code> are not added to the new board.</td></tr>
       <tr><td><code>type</code></td><td>string</td><td><span class="opt">optional</span></td><td>Section type, typically <code>"body"</code>. Header / footer are managed via <code>header</code> and <code>footer_id</code>, not here.</td></tr>
       <tr><td><code>ribbonParts</code></td><td>array</td><td><span class="opt">optional</span></td><td>Ribbon overrides; usually pass through what you got from <a href="#get-describe"><code>GET /describe</code></a>.</td></tr>
+    </tbody>
+  </table>
+
+  <h4 id="board-channels">Channels</h4>
+  <p>Pass each channel as <code>{ "name": "&hellip;" }</code>. The name is matched exactly (case-sensitive, no whitespace trimming) against existing channels in the organization &mdash; the board joins the existing channel if a match is found; otherwise a new channel is created with this name.</p>
+  <pre><code>{
+  "channels": [
+    { "name": "Q4 launch" },
+    { "name": "Acme account" }
+  ]
+}</code></pre>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>string</td><td>Channel name. Matched exactly against existing channels; created if no match.</td></tr>
     </tbody>
   </table>
 
@@ -1061,6 +1083,12 @@ Authorization: Basic &lt;your_api_token&gt;</code></pre>
   <pre><code>{
   "template_board_id": 4321,
   "board_name": "Q3 Campaign — Acme Corp",
+  "owner_email": "rep@acme.com",
+  "tags": ["acme", "q3-campaign"],
+  "state": "online",
+  "channels": [
+    { "name": "Q3 Campaigns" }
+  ],
   "header": {
     "primary_logo": { "url": "https://cdn.example.com/acme.png", "link": "https://acme.com", "alt": "Acme" },
     "tagline": "Built for modern teams",
@@ -1426,6 +1454,18 @@ Content-Type: application/json
         <td><strong>Footer</strong></td>
         <td>The bottom area of a board (links, legal, social). Footers are reusable across boards in your organization; you reference one by id when creating a board. <a href="https://help.folloze.com/s/article/Setting-Up-a-Board-s-Header-Footer" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
       </tr>
+      <tr>
+        <td><strong>Board tag</strong></td>
+        <td>A free-form label applied to a board (distinct from content-item tags). Used to organize, filter, and report on boards inside Folloze. Pass <code>tags: ["..."]</code> on <a href="#post-boards"><code>POST /v1/boards</code></a> &mdash; new tags are created on demand; existing ones are reused. <a href="https://help.folloze.com/s/article/Editing-a-Board" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Channel</strong></td>
+        <td>A grouping of boards used for navigation, sharing, and audience targeting inside Folloze. One board can belong to many channels. On <a href="#post-boards"><code>POST /v1/boards</code></a> reference channels by <code>name</code> &mdash; matched exactly (case-sensitive, no trim); created if no match exists. <a href="https://help.folloze.com/s/article/Managing-Channels-of-Related-Boards" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Board state</strong></td>
+        <td>Publish state of a board. <code>"online"</code> means the board is published and reachable at its URL; <code>"draft"</code> means it's saved but not yet published. New boards default to <code>"draft"</code> &mdash; pass <code>state: "online"</code> on <a href="#post-boards"><code>POST /v1/boards</code></a> to publish immediately. <a href="https://help.folloze.com/s/article/Publishing-a-Board" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
     </tbody>
   </table>
 
@@ -1484,6 +1524,32 @@ Content-Type: application/json
     <li>Optionally add or update <strong>content items</strong> in your library, then place them on the new board as <strong>board items</strong> with per-board titles, thumbnails, and categories.</li>
     <li>Share the board URL with your buyer.</li>
   </ol>
+
+  <hr/>
+
+  <h1 id="changelog">Changelog</h1>
+  <p class="lede">Audit log of changes to the public APIs. Newest first.</p>
+
+  <table>
+    <thead>
+      <tr><th style="width:120px;">Date</th><th style="width:140px;">Area</th><th>Change</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2026-05-11</td>
+        <td>Board Creation API</td>
+        <td>
+          <strong>Added four optional fields to <a href="#post-boards"><code>POST /v1/boards</code></a></strong>:
+          <ul>
+            <li><code>owner_email</code> &mdash; assign a board owner by email at creation. Defaults to the first admin of the organization.</li>
+            <li><code>tags</code> &mdash; apply board tags<button class="term-help" data-term="board-tag" aria-label="What is a board tag?" aria-expanded="false">?</button> on creation.</li>
+            <li><code>state</code> &mdash; <code>"online"</code> publishes immediately; <code>"draft"</code> creates as draft (default).</li>
+            <li><code>channels</code> &mdash; attach the new board to one or more channels<button class="term-help" data-term="channel" aria-label="What is a channel?" aria-expanded="false">?</button> by <code>id</code> or <code>name</code>.</li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
   </main>
 </div>
@@ -1602,6 +1668,21 @@ Content-Type: application/json
       name: "Tag",
       desc: "A free-form label applied to a content item. Used for search/filter via GET /v1/items?tags[]=… — new tags are created on demand.",
       help: "https://help.folloze.com/s/article/Editing-a-Board"
+    },
+    "board-tag": {
+      name: "Board tag",
+      desc: "A free-form label applied to a board (distinct from content-item tags). Used to organize, filter, and report on boards. Pass tags:[...] on POST /v1/boards — new tags are created on demand.",
+      help: "https://help.folloze.com/s/article/Editing-a-Board"
+    },
+    "channel": {
+      name: "Channel",
+      desc: "A grouping of boards used for navigation, sharing, and audience targeting. Reference by name on POST /v1/boards — matched exactly (case-sensitive, no trim); created if no match.",
+      help: "https://help.folloze.com/s/article/Managing-Channels-of-Related-Boards"
+    },
+    "board-state": {
+      name: "Board state",
+      desc: "Publish state of a board. 'online' = published and reachable; 'draft' = saved but not published. Defaults to 'draft' on POST /v1/boards.",
+      help: "https://help.folloze.com/s/article/Publishing-a-Board"
     }
   };
 
