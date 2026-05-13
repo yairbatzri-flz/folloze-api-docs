@@ -601,6 +601,7 @@
       <a href="#concepts-schema">API schema descriptors</a>
       <a href="#concepts-identity">Section &amp; widget identity</a>
       <a href="#concepts-merge">Merge semantics</a>
+      <a href="#concepts-cta">Configuring CTAs</a>
 
       <h4>Board Creation: endpoints</h4>
       <a href="#get-templates"><span class="method get" style="background:#dbeafe;color:#1e40af">GET</span>List templates</a>
@@ -808,6 +809,161 @@ Folloze-Initiator: Folloze
 
   <hr/>
 
+  <h2 id="concepts-cta">Configuring CTAs <a class="anchor-link" href="#concepts-cta">#</a></h2>
+  <p>Call-to-action buttons<button class="term-help" data-term="cta" aria-label="What is a CTA?" aria-expanded="false">?</button> can be configured on <strong>any section</strong> that exposes a <code>cta</code> or <code>secondary_cta</code> field &mdash; headers, banners, body sections, navigation items, and carousel columns. Every CTA follows the same object shape regardless of where it appears.</p>
+
+  <h4>CTA object</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>text</code></td><td>string</td><td><span class="req">required</span></td><td>The button label displayed to visitors.</td></tr>
+      <tr><td><code>type</code></td><td>string</td><td><span class="opt">optional</span></td><td>Button style. One of <code>"flz-primary"</code>, <code>"flz-secondary"</code>, or <code>"flz-link"</code>. Navigation items default to <code>"flz-link"</code>.</td></tr>
+      <tr><td><code>action</code></td><td>object</td><td><span class="opt">optional</span></td><td>What happens when the visitor clicks. Contains a <code>type</code> field plus a matching config key. See <a href="#cta-action-types">action types</a> below.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Button styles</h4>
+  <table>
+    <thead><tr><th>Value</th><th>Appearance</th></tr></thead>
+    <tbody>
+      <tr><td><code>flz-primary</code></td><td>Solid, high-emphasis button &mdash; the main call to action.</td></tr>
+      <tr><td><code>flz-secondary</code></td><td>Outlined or lower-emphasis button &mdash; a supporting action.</td></tr>
+      <tr><td><code>flz-link</code></td><td>Styled as an inline link. Default for header navigation items.</td></tr>
+    </tbody>
+  </table>
+
+  <h4 id="cta-action-types">Action types</h4>
+  <p>The <code>action</code> object always has a <code>type</code> field that selects the behaviour, plus a sibling key of the same name (or <code>item_viewer</code> for <code>open_content_item</code>) containing the type-specific configuration.</p>
+
+  <table>
+    <thead><tr><th><code>action.type</code></th><th>Config key</th><th>Fields</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>open_url</code></td>
+        <td><code>open_url</code></td>
+        <td><code>url</code>&nbsp;(string), <code>open_in_new_window</code>&nbsp;(bool)</td>
+        <td>Navigate to an external or internal URL. Set <code>open_in_new_window: true</code> to open in a new tab.</td>
+      </tr>
+      <tr>
+        <td><code>form</code></td>
+        <td><code>form</code></td>
+        <td><code>form_id</code>&nbsp;(string)</td>
+        <td>Open a Folloze form by its id.</td>
+      </tr>
+      <tr>
+        <td><code>registration</code></td>
+        <td><code>registration</code></td>
+        <td><code>form_id</code>&nbsp;(string)</td>
+        <td>Open a registration form (same shape as <code>form</code>, but treated as event registration).</td>
+      </tr>
+      <tr>
+        <td><code>anchor</code></td>
+        <td><code>anchor</code></td>
+        <td><code>hash</code>&nbsp;(string)</td>
+        <td>Scroll to a named anchor on the same board page.</td>
+      </tr>
+      <tr>
+        <td><code>contact</code></td>
+        <td><code>contact</code></td>
+        <td><code>privacy_message_id</code>&nbsp;(string)</td>
+        <td>Open a &ldquo;contact me&rdquo; dialog tied to a privacy message.</td>
+      </tr>
+      <tr>
+        <td><code>message</code></td>
+        <td><code>message</code></td>
+        <td><code>privacy_message_id</code>&nbsp;(string)</td>
+        <td>Open a &ldquo;send a message&rdquo; dialog tied to a privacy message.</td>
+      </tr>
+      <tr>
+        <td><code>share</code></td>
+        <td><code>share</code></td>
+        <td><code>privacy_message_id</code>&nbsp;(string)</td>
+        <td>Open the board share dialog tied to a privacy message.</td>
+      </tr>
+      <tr>
+        <td><code>send_email_clicked</code></td>
+        <td><code>send_email_clicked</code></td>
+        <td><code>email</code>&nbsp;(string), <code>subject</code>&nbsp;(string)</td>
+        <td>Open the visitor's email client with a pre-filled recipient and subject line.</td>
+      </tr>
+      <tr>
+        <td><code>open_content_item</code></td>
+        <td><code>item_viewer</code></td>
+        <td><em>(empty object)</em></td>
+        <td>Open the board's content-item viewer overlay. Note: the config key is <code>item_viewer</code>, not <code>open_content_item</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Example: banner with primary and secondary CTA</h4>
+  <pre><code>"cta": {
+  "text": "Download the report",
+  "type": "flz-primary",
+  "action": {
+    "type": "open_content_item",
+    "item_viewer": {}
+  }
+},
+"secondary_cta": {
+  "text": "Schedule a Demo",
+  "type": "flz-secondary",
+  "action": {
+    "type": "open_url",
+    "open_url": {
+      "url": "https://example.com/demo",
+      "open_in_new_window": true
+    }
+  }
+}</code></pre>
+
+  <h4>Example: header navigation with mixed actions</h4>
+  <pre><code>"navigation": {
+  "items": [
+    {
+      "text": "About Us",
+      "type": "flz-link",
+      "action": {
+        "type": "anchor",
+        "anchor": { "hash": "about" }
+      }
+    },
+    {
+      "text": "Contact",
+      "type": "flz-link",
+      "action": {
+        "type": "form",
+        "form": { "form_id": "86102" }
+      }
+    },
+    {
+      "text": "Share",
+      "type": "flz-link",
+      "action": {
+        "type": "share",
+        "share": { "privacy_message_id": "11869" }
+      }
+    }
+  ]
+}</code></pre>
+
+  <h4>Where CTAs appear</h4>
+  <table>
+    <thead><tr><th>Location</th><th>Fields</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Header widget</td><td><code>cta</code></td><td>Single CTA in the top bar. Controlled by <code>visibility.cta</code>.</td></tr>
+      <tr><td>Header navigation</td><td><code>navigation.items[]</code></td><td>Each item is a CTA object. Typically uses <code>flz-link</code> style. Controlled by <code>visibility.navigation</code>.</td></tr>
+      <tr><td>Banner widget</td><td><code>cta</code>, <code>secondary_cta</code></td><td>Primary and secondary buttons. Controlled by <code>visibility.cta</code>, <code>visibility.secondary_cta</code>, and the parent <code>visibility.showButtons</code> toggle.</td></tr>
+      <tr><td>Body sections</td><td><code>cta</code>, <code>secondary_cta</code></td><td>Supported by text, image, carousel, and other body section widgets.</td></tr>
+      <tr><td>Carousel columns</td><td><code>repeatable.columns[].cta</code></td><td>Per-column CTA. May omit the <code>type</code> field (inherits the column default style).</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <strong>Visibility gates.</strong> Even if a CTA is fully configured, it won't render unless its visibility flag is <code>true</code>. Always check and set the matching <code>visibility</code> key when adding or enabling a CTA. For banners, the <code>showButtons</code> flag is a parent toggle that must also be <code>true</code> for either button to appear.
+  </div>
+
+  <hr/>
+
   <h2 id="get-templates">List templates <a class="anchor-link" href="#get-templates">#</a></h2>
   <div class="endpoint"><span class="method get" style="background:#dbeafe;color:#1e40af">GET</span><span>/v1/board_templates</span></div>
   <p>Returns every template board in your organization with its <code>id</code>, <code>name</code>, and <code>description</code>. Use this to discover which templates are available before fetching schemas or creating boards &mdash; especially helpful when you don't already know the template ids.</p>
@@ -901,7 +1057,9 @@ templates = res.json()</code></pre></div>
         },
         "cta": {
           "text": "Contact Us",
+          "type": "flz-secondary",
           "action": {
+            "type": "open_url",
             "open_url": {
               "url": ""
             }
@@ -926,10 +1084,23 @@ templates = res.json()</code></pre></div>
         "title": "&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading2\"&gt;&lt;span style=\"color: var(--fz-color-primary-1);\"&gt;Global. Simple. Unified. &lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading2\"&gt;&lt;span style=\"color: var(--fz-color-primary-1);\"&gt;It’s the Power of One&lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;span style=\"text-align: left;\"&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;span style=\"text-align: left; color: var(--fz-color-primary-1);\"&gt;How JLL will empower &lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;span style=\"text-align: left; color: var(--fz-color-primary-1);\"&gt;[insert target’s sector]&lt;/span&gt;&lt;span style=\"text-align: left;\"&gt; &lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;span style=\"color: var(--fz-color-primary-1);\"&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=\"--fz-marker-color: var(--fz-color-neutral-0); text-align: center;\" class=\"ql-style-heading3\"&gt;&lt;br&gt;&lt;/div&gt;",
         "subtitle": "&lt;div style=\"text-align: center;\" class=\"ql-style-heading4\"&gt;&lt;span style=\"color: var(--fz-color-primary-1);\"&gt;Enhance productivity, services and employee experiences with data center and workspace management solutions from JLL.&lt;/span&gt;&lt;/div&gt;",
         "cta": {
-          "text": "Read your business case now"
+          "text": "Read your business case now",
+          "type": "flz-primary",
+          "action": {
+            "type": "open_content_item",
+            "item_viewer": {}
+          }
         },
         "secondary_cta": {
-          "text": "Schedule a Demo"
+          "text": "Schedule a Demo",
+          "type": "flz-secondary",
+          "action": {
+            "type": "open_url",
+            "open_url": {
+              "url": "",
+              "open_in_new_window": true
+            }
+          }
         }
       }
     },
@@ -966,7 +1137,9 @@ templates = res.json()</code></pre></div>
         },
         "cta": {
           "text": "Contact Us",
+          "type": "flz-secondary",
           "action": {
+            "type": "open_url",
             "open_url": {
               "url": ""
             }
@@ -988,11 +1161,11 @@ templates = res.json()</code></pre></div>
         },
         "navigation": {
           "items": [
-            { "text": "Solutions",       "action": { "open_url": {} } },
-            { "text": "Why us",          "action": { "open_url": {} } },
-            { "text": "Success stories", "action": { "open_url": {} } },
-            { "text": "Product tour",    "action": { "open_url": {} } },
-            { "text": "Resources",       "action": { "open_url": {} } }
+            { "text": "Solutions",       "type": "flz-link", "action": { "type": "open_url", "open_url": {} } },
+            { "text": "Why us",          "type": "flz-link", "action": { "type": "open_url", "open_url": {} } },
+            { "text": "Success stories", "type": "flz-link", "action": { "type": "open_url", "open_url": {} } },
+            { "text": "Product tour",    "type": "flz-link", "action": { "type": "open_url", "open_url": {} } },
+            { "text": "Resources",       "type": "flz-link", "action": { "type": "open_url", "open_url": {} } }
           ]
         }
       }
@@ -1092,11 +1265,17 @@ Authorization: Basic &lt;your_api_token&gt;</code></pre>
   "header": {
     "primary_logo": { "url": "https://cdn.example.com/acme.png", "link": "https://acme.com", "alt": "Acme" },
     "tagline": "Built for modern teams",
-    "navigation": [
-      { "text": "Solutions", "url": "https://acme.com/solutions" },
-      { "text": "Pricing",   "url": "https://acme.com/pricing" }
-    ],
-    "cta": { "text": "Talk to sales", "url": "https://acme.com/contact" }
+    "navigation": {
+      "items": [
+        { "text": "Solutions", "type": "flz-link", "action": { "type": "open_url", "open_url": { "url": "https://acme.com/solutions", "open_in_new_window": true } } },
+        { "text": "Pricing",   "type": "flz-link", "action": { "type": "open_url", "open_url": { "url": "https://acme.com/pricing", "open_in_new_window": true } } }
+      ]
+    },
+    "cta": {
+      "text": "Talk to sales",
+      "type": "flz-primary",
+      "action": { "type": "form", "form": { "form_id": "86101" } }
+    }
   },
   "footer_id": 789,
   "sections": [
@@ -1108,8 +1287,16 @@ Authorization: Basic &lt;your_api_token&gt;</code></pre>
           "widget_id": "w_111",
           "title": "Acme x Folloze",
           "subtitle": "Personalized buyer experiences at scale",
-          "cta": { "text": "Get started" },
-          "secondary_cta": { "text": "Watch demo" }
+          "cta": {
+            "text": "Get started",
+            "type": "flz-primary",
+            "action": { "type": "open_content_item", "item_viewer": {} }
+          },
+          "secondary_cta": {
+            "text": "Watch demo",
+            "type": "flz-secondary",
+            "action": { "type": "open_url", "open_url": { "url": "https://acme.com/demo", "open_in_new_window": true } }
+          }
         }
       ],
       "ribbonParts": []
@@ -1122,7 +1309,11 @@ Authorization: Basic &lt;your_api_token&gt;</code></pre>
           "widget_id": "w_222",
           "title": "Why Acme",
           "subtitle": "Three reasons teams choose us",
-          "cta": { "text": "See all" },
+          "cta": {
+            "text": "See all",
+            "type": "flz-primary",
+            "action": { "type": "open_url", "open_url": { "url": "", "open_in_new_window": true } }
+          },
           "repeatable": {
             "columns": [
               { "title": "Faster onboarding",      "paragraph": "Go live in days, not months." },
@@ -1469,6 +1660,25 @@ Content-Type: application/json
     </tbody>
   </table>
 
+  <h2>CTAs &amp; actions</h2>
+  <table>
+    <thead><tr><th>Term</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>CTA</strong> (call to action)</td>
+        <td>A clickable button or link on a board section. Every CTA has a label (<code>text</code>), a visual style (<code>type</code>: <code>flz-primary</code>, <code>flz-secondary</code>, or <code>flz-link</code>), and an <strong>action</strong> that defines what happens on click. Sections can have a primary <code>cta</code> and/or a <code>secondary_cta</code>. <a href="#concepts-cta">CTA configuration reference &rarr;</a> <a href="https://help.folloze.com/s/article/Adding-CTA-buttons-to-Boards-U2" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>CTA action</strong></td>
+        <td>The behaviour triggered when a visitor clicks a CTA. Nine action types are supported: <code>open_url</code>, <code>form</code>, <code>registration</code>, <code>anchor</code>, <code>contact</code>, <code>message</code>, <code>share</code>, <code>send_email_clicked</code>, and <code>open_content_item</code>. Each type carries its own configuration &mdash; see the <a href="#cta-action-types">action types table</a>. <a href="https://help.folloze.com/s/topic/0TOQj0000000K0MOAU/creating-calls-to-action" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+      <tr>
+        <td><strong>Privacy message</strong></td>
+        <td>A consent / privacy notice shown alongside contact, message, and share actions. Referenced by <code>privacy_message_id</code> in the action configuration. Privacy messages are managed in the Folloze UI. <a href="https://help.folloze.com/s/article/Adding-Privacy-Messages-on-Folloze-Forms" target="_blank" rel="noopener">Help&nbsp;Center &rarr;</a></td>
+      </tr>
+    </tbody>
+  </table>
+
   <h2>Sections &amp; ribbons</h2>
   <table>
     <thead><tr><th>Term</th><th>What it means</th></tr></thead>
@@ -1535,6 +1745,13 @@ Content-Type: application/json
       <tr><th style="width:120px;">Date</th><th style="width:140px;">Area</th><th>Change</th></tr>
     </thead>
     <tbody>
+      <tr>
+        <td>2026-05-13</td>
+        <td>Board Creation API</td>
+        <td>
+          <strong>CTA configuration across all sections.</strong> CTAs<button class="term-help" data-term="cta" aria-label="What is a CTA?" aria-expanded="false">?</button> now support a full <code>action</code> object with nine action types (<code>open_url</code>, <code>form</code>, <code>registration</code>, <code>anchor</code>, <code>contact</code>, <code>message</code>, <code>share</code>, <code>send_email_clicked</code>, <code>open_content_item</code>) and three button styles (<code>flz-primary</code>, <code>flz-secondary</code>, <code>flz-link</code>). Available on headers, banners, navigation items, and all body sections. See <a href="#concepts-cta">Configuring CTAs</a>.
+        </td>
+      </tr>
       <tr>
         <td>2026-05-11</td>
         <td>Board Creation API</td>
@@ -1683,6 +1900,21 @@ Content-Type: application/json
       name: "Board state",
       desc: "Publish state of a board. 'online' = published and reachable; 'draft' = saved but not published. Defaults to 'draft' on POST /v1/boards.",
       help: "https://help.folloze.com/s/article/Publishing-a-Board"
+    },
+    "cta": {
+      name: "CTA (call to action)",
+      desc: "A clickable button or link on a board section. Has a label (text), a visual style (flz-primary, flz-secondary, or flz-link), and an action that defines what happens on click.",
+      help: "https://help.folloze.com/s/article/Adding-CTA-buttons-to-Boards-U2"
+    },
+    "cta-action": {
+      name: "CTA action",
+      desc: "The behaviour triggered when a visitor clicks a CTA. Nine types: open_url, form, registration, anchor, contact, message, share, send_email_clicked, and open_content_item.",
+      help: "https://help.folloze.com/s/topic/0TOQj0000000K0MOAU/creating-calls-to-action"
+    },
+    "privacy-message": {
+      name: "Privacy message",
+      desc: "A consent / privacy notice shown alongside contact, message, and share actions. Referenced by privacy_message_id. Managed in the Folloze UI.",
+      help: "https://help.folloze.com/s/article/Adding-Privacy-Messages-on-Folloze-Forms"
     }
   };
 
